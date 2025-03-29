@@ -1,8 +1,8 @@
 {
-  "name": "react-part1",
+  "name": "react-part2",
   "version": "1.0.0",
   "description": "",
-  "main": "react_part1.html",
+  "main": "react_part2.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
