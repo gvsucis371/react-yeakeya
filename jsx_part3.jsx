@@ -1,5 +1,3 @@
-// NOTE: Known issues with reloading automatically. Could not get to work consistently in a decent amount of time.
-
 const editDiv = ReactDOM.createRoot(document.getElementById('edit-div'));
 const listDiv = ReactDOM.createRoot(document.getElementById('display-buildings'));
 
@@ -24,16 +22,16 @@ function newBuilding() {
 </form>;
 }
 
-function EditBuilding(namePassed) {
+function EditBuilding({ namePassed }) {
     const [building, setBuilding] = React.useState(null);
 
     React.useEffect(() => {
         async function fetchBuilding() {
-            const data = await find(namePassed.buildingName);
+            const data = await find(namePassed); // this is the string ID
             setBuilding(data);
         }
         fetchBuilding();
-    }, [namePassed.buildingName]);
+    }, [namePassed]);
 
     if (building != null) {
         return <form onSubmit={handleSubmit} id="editForm">
@@ -59,17 +57,7 @@ function EditBuilding(namePassed) {
     }
 }
 
-function ListBuildings({refresh}) {
-    const [buildings, setBuildings] = React.useState([]);
-
-    React.useEffect(() => {
-        async function fetchBuildings() {
-            const data = await allBuildings();
-            setBuildings(data);
-        }
-        fetchBuildings();
-    }, [refresh]);
-
+function ListBuildings({buildingsList}) {
     return (
         <div>
             <table>
@@ -85,14 +73,14 @@ function ListBuildings({refresh}) {
                     </tr>
                 </thead>
                 <tbody>
-                    {buildings.map((building) => (
+                    {buildingsList.map((building) => (
                         <tr key={building.nameID}>
                             <td>{building.nameID}</td>
                             <td>{building.description}</td>
                             <td>{building.yearBuilt}</td>
                             <td>{building.area}</td>
                             <td>{building.campus}</td>
-                            <td><button onClick={() => editDiv.render(<EditBuilding buildingName={building.nameID}/>)}>Edit</button></td>
+                            <td><button onClick={() => editDiv.render(<EditBuilding namePassed={building.nameID}/>)}>Edit</button></td>
                             <button onClick={async () => { 
                                     await handleDestroy(building.nameID);
                                 }}>Delete</button>
@@ -104,7 +92,7 @@ function ListBuildings({refresh}) {
     );
 }
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
     event.preventDefault();
 
     if (event.target.id == "newForm") {
@@ -115,6 +103,7 @@ function handleSubmit(event) {
             area: document.getElementById("area").value,
             campus: document.getElementById("campus").value
         };
+        console.log(newBuilding)
         create(newBuilding);
     } else {
         let editedBuilding = {
@@ -133,12 +122,15 @@ function handleSubmit(event) {
 
         editDiv.render(newBuilding());
     }
-
+    const updatedBuildings = await allBuildings();
+    listDiv.render(<ListBuildings buildingsList={updatedBuildings} />);
     event.target.reset();
 }
 
-function handleDestroy(nameID) {
-    remove(nameID);
+async function handleDestroy(nameID) {
+    await remove(nameID);
+    const updatedBuildings = await allBuildings();
+    listDiv.render(<ListBuildings buildingsList={updatedBuildings} />);
 }
 
 async function allBuildings() {
@@ -175,4 +167,7 @@ async function remove(nameID) {
 }
 
 editDiv.render(newBuilding());
-listDiv.render(<ListBuildings/>);
+(async () => {
+    const buildings = await allBuildings();
+    listDiv.render(<ListBuildings buildingsList={buildings} />);
+})();
